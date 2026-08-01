@@ -116,6 +116,10 @@ body::before {
   display: none !important;
 }
 
+.session-panel[aria-hidden="true"] {
+  display: none !important;
+}
+
 .roulette-frame {
   position: relative;
   height: calc(var(--item-height) * var(--visible-items));
