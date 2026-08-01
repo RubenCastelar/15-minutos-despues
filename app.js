@@ -3,22 +3,60 @@ const concepts = [
   "Ley de atraccion",
   "Sincronicidad",
   "Efecto mariposa",
-  "Paradoja de Fermi",
   "Inconsciente colectivo",
-  "Inteligencia emocional",
-  "Pensamiento lateral",
   "Resonancia morfica",
   "Estado de flujo",
   "Teoria del caos",
-  "Minimalismo mental",
   "Memoria ancestral",
   "Sombras del ego",
   "Atencion plena",
   "Realidad subjetiva",
   "Entropia creativa",
-  "Dopamina social",
   "Sesgo de confirmacion",
   "Percepcion expandida",
+  "Visualizacion mental",
+  "Claridad mental",
+  "Mente subconsciente",
+  "Anclaje emocional",
+  "Reprogramacion mental",
+  "Potencial humano",
+  "Coherencia mental",
+  "Consciencia expandida",
+  "Conexion mente cuerpo",
+  "Intencion consciente",
+  "Meditacion activa",
+  "Intuicion entrenada",
+  "Arquitectura mental",
+  "Campos sutiles",
+  "Alquimia interior",
+  "Geometria sagrada",
+  "Tiempo subjetivo",
+  "Memoria celular",
+  "Destino simbolico",
+  "Energia residual",
+  "Liminalidad",
+  "Resonancia interna",
+  "Presencia expandida",
+  "Eter consciente",
+  "Patrones invisibles",
+  "Coincidencia significativa",
+  "Vibracion personal",
+  "Transmutacion emocional",
+  "Percepcion simbolica",
+  "Silencio mental",
+  "Umbral intuitivo",
+  "Magnetismo interno",
+  "Conciencia testigo",
+  "Eco del pensamiento",
+  "Frecuencia emocional",
+  "Unidad interior",
+  "Conexion sutil",
+  "Misterio consciente",
+  "Puente invisible",
+  "Destino intuitivo",
+  "Codigo interno",
+  "Convergencia mental",
+  "Sexto sentido",
 ];
 
 const bufferItems = 2;
@@ -26,11 +64,42 @@ const windowElement = document.getElementById("roulette-window");
 const buttonElement = document.getElementById("spin-button");
 const resultElement = document.getElementById("result-text");
 const resultPanelElement = document.querySelector(".result-panel");
+const appShellElement = document.querySelector(".app-shell");
+const heroElement = document.querySelector(".hero");
+const rouletteCardElement = document.querySelector(".roulette-card");
+const socialFooterElement = document.querySelector(".social-footer");
+const sessionPanelElement = document.getElementById("session-panel");
+const backButtonElement = document.getElementById("back-button");
+const sessionConceptElement = document.getElementById("session-concept");
+const sessionButtonElement = document.getElementById("session-button");
+const timerOrbElement = document.getElementById("timer-orb");
+const timerStageElement = document.getElementById("timer-stage");
+const timerValueElement = document.getElementById("timer-value");
+
+const TIMER_STAGES = [
+  {
+    key: "focus",
+    label: "15 minutos de investigación",
+    buttonLabel: "Empezar 15 min",
+    durationSeconds: 15 * 60,
+  },
+  {
+    key: "cooldown",
+    label: "Presentación",
+    buttonLabel: "Empezar 1 min",
+    durationSeconds: 60,
+  },
+];
 
 let audioContext;
 let isSpinning = false;
 let currentIndex = 0;
 let travelOffset = 0;
+let timerIntervalId;
+let timerDeadline = 0;
+let currentWinner = "";
+let currentMode = "idle";
+let currentTimerStageIndex = 0;
 
 function modulo(value, length) {
   return ((value % length) + length) % length;
@@ -146,6 +215,144 @@ function updateResult(text) {
   resultElement.textContent = text;
 }
 
+function formatTime(totalSeconds) {
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+
+  return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+}
+
+function updateTimerDisplay(totalSeconds) {
+  timerValueElement.textContent = formatTime(totalSeconds);
+}
+
+function getCurrentTimerStage() {
+  return TIMER_STAGES[currentTimerStageIndex];
+}
+
+function syncTimerStageUi() {
+  const stage = getCurrentTimerStage();
+  if (!stage) {
+    return;
+  }
+
+  timerStageElement.textContent = stage.label;
+  sessionButtonElement.textContent = stage.buttonLabel;
+  updateTimerDisplay(stage.durationSeconds);
+  updateTimerProgress(1);
+}
+
+function stopTimer() {
+  if (timerIntervalId) {
+    window.clearInterval(timerIntervalId);
+    timerIntervalId = undefined;
+  }
+}
+
+function setSessionMode(mode) {
+  currentMode = mode;
+  const sessionVisible = mode !== "idle";
+  appShellElement.classList.toggle("is-idle", mode === "idle");
+  appShellElement.classList.toggle("is-session", mode !== "idle");
+
+  heroElement.hidden = sessionVisible;
+  rouletteCardElement.hidden = sessionVisible;
+  socialFooterElement.hidden = sessionVisible;
+  sessionPanelElement.hidden = !sessionVisible;
+  sessionPanelElement.setAttribute("aria-hidden", String(!sessionVisible));
+
+  if (!sessionVisible) {
+    sessionPanelElement.classList.remove("is-visible");
+    return;
+  }
+
+  requestAnimationFrame(() => {
+    sessionPanelElement.classList.add("is-visible");
+  });
+}
+
+function updateTimerProgress(progress) {
+  timerOrbElement.style.setProperty("--timer-progress", String(progress));
+}
+
+function enterSessionMode(winner) {
+  currentWinner = winner;
+  currentTimerStageIndex = 0;
+  sessionConceptElement.textContent = winner;
+  timerOrbElement.classList.remove("is-running", "is-finished");
+  sessionButtonElement.hidden = false;
+  sessionButtonElement.disabled = false;
+  syncTimerStageUi();
+  setSessionMode("ready");
+}
+
+function startTimer() {
+  const stage = getCurrentTimerStage();
+  if (!stage) {
+    return;
+  }
+
+  const durationSeconds = stage.durationSeconds;
+  stopTimer();
+  timerDeadline = Date.now() + durationSeconds * 1000;
+  updateTimerDisplay(durationSeconds);
+  updateTimerProgress(1);
+  timerOrbElement.classList.remove("is-finished");
+  timerOrbElement.classList.add("is-running");
+  sessionButtonElement.hidden = true;
+  setSessionMode("running");
+
+  timerIntervalId = window.setInterval(() => {
+    const remainingSeconds = Math.max(
+      0,
+      Math.ceil((timerDeadline - Date.now()) / 1000),
+    );
+    const progress = remainingSeconds / durationSeconds;
+
+    updateTimerDisplay(remainingSeconds);
+    updateTimerProgress(progress);
+
+    if (remainingSeconds > 0) {
+      return;
+    }
+
+    stopTimer();
+    timerOrbElement.classList.remove("is-running");
+    sessionButtonElement.hidden = false;
+    sessionButtonElement.disabled = false;
+
+    if (currentTimerStageIndex < TIMER_STAGES.length - 1) {
+      currentTimerStageIndex += 1;
+      syncTimerStageUi();
+      setSessionMode("ready");
+      return;
+    }
+
+    timerOrbElement.classList.add("is-finished");
+    timerStageElement.textContent = "Sesión completada";
+    sessionButtonElement.textContent = "Finalizar";
+    setSessionMode("finished");
+  }, 250);
+}
+
+function resetToInitialState() {
+  stopTimer();
+  currentWinner = "";
+  travelOffset = 0;
+  timerDeadline = 0;
+  currentTimerStageIndex = 0;
+  updateResult("Esperando activación");
+  timerOrbElement.classList.remove("is-running", "is-finished");
+  sessionButtonElement.hidden = false;
+  sessionButtonElement.disabled = false;
+  syncTimerStageUi();
+  buttonElement.disabled = false;
+  buttonElement.textContent = "Iniciar búsqueda";
+  sessionPanelElement.classList.remove("is-visible");
+  setSessionMode("idle");
+  renderRoulette();
+}
+
 function advanceSteps(stepCount, progressRatio) {
   for (let step = 0; step < stepCount; step += 1) {
     currentIndex = modulo(currentIndex - 1, concepts.length);
@@ -166,6 +373,7 @@ function finishSpin(winnerIndex) {
   resultPanelElement.classList.add("is-winning");
 
   playWinTone();
+  enterSessionMode(winner);
   buttonElement.disabled = false;
   buttonElement.textContent = "Volver a buscar";
   isSpinning = false;
@@ -248,8 +456,35 @@ window.addEventListener("keydown", (event) => {
   }
 
   event.preventDefault();
-  spin();
+  if (currentMode === "ready") {
+    startTimer();
+    return;
+  }
+
+  if (currentMode === "finished") {
+    resetToInitialState();
+    return;
+  }
+
+  if (currentMode === "idle") {
+    spin();
+  }
 });
 
+sessionButtonElement.addEventListener("click", () => {
+  if (currentMode === "ready") {
+    startTimer();
+    return;
+  }
+
+  if (currentMode === "finished") {
+    resetToInitialState();
+  }
+});
+
+backButtonElement.addEventListener("click", resetToInitialState);
+
 renderRoulette();
+syncTimerStageUi();
+setSessionMode("idle");
 buttonElement.addEventListener("click", spin);
