@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Randomizador Futurista</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Syne:wght@700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="ambient ambient-left"></div>
+    <div class="ambient ambient-right"></div>
+
+    <main class="app-shell">
+      <section class="hero">
+        <h1>
+          Entrena tu memoria, concentración<br />
+          y conexiones neuronales.
+        </h1>
+      </section>
+
+      <section class="roulette-card">
+        <div class="roulette-frame">
+          <div class="focus-band"></div>
+          <div class="roulette-window" id="roulette-window"></div>
+        </div>
+
+        <div class="result-panel">
+          <span class="result-label">Selección final</span>
+          <strong id="result-text">Esperando activación</strong>
+        </div>
+
+        <button id="spin-button" class="spin-button" type="button">
+          Iniciar búsqueda
+        </button>
+      </section>
+    </main>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
